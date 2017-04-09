@@ -1,3 +1,9 @@
+Intro
+=====
+This is a modified version of John Wargo's [Pi Weather Station](https://github.com/johnwargo/pi_weather_station) project.  My modifications display numbers on the sense hat display instead of up and down arrows.  This makes the project suitable for mounting near a window of your house, so you can look outside and see the temperature.
+
+The text below is from the original README.md.
+
 Pi Weather Station
 ==================
 

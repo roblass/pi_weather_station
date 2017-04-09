@@ -1,13 +1,16 @@
 #!/usr/bin/python
-'''*****************************************************************************************************************
+'''************************************************************************************************
     Pi Temperature Station
     By John M. Wargo
     www.johnwargo.com
 
-    This is a Raspberry Pi project that measures weather values (temperature, humidity and pressure) using
-    the Astro Pi Sense HAT then uploads the data to a Weather Underground weather station.
-********************************************************************************************************************'''
+    Minor modifications by Rob Lass <r o b _dot_ lass _at_ gmail _dot_ com> to display numbers
+    on the sense hat instead of arrows.
 
+    This is a Raspberry Pi project that measures weather values (temperature, humidity and
+    pressure) using the Astro Pi Sense HAT then uploads the data to a Weather Underground
+    weather station.
+************************************************************************************************'''
 from __future__ import print_function
 
 import datetime
@@ -24,55 +27,144 @@ from config import Config
 # ============================================================================
 # Constants
 # ============================================================================
-# specifies how often to measure values from the Sense HAT (in minutes)
 MEASUREMENT_INTERVAL = 10  # minutes
-# Set to False when testing the code and/or hardware
-# Set to True to enable upload of weather data to Weather Underground
 WEATHER_UPLOAD = True
-# the weather underground URL used to upload weather data
 WU_URL = "http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php"
-# some string constants
-SINGLE_HASH = "#"
-HASHES = "########################################"
-SLASH_N = "\n"
 
-# constants used to display an up and down arrows plus bars
 # modified from https://www.raspberrypi.org/learning/getting-started-with-the-sense-hat/worksheet/
-# set up the colours (blue, red, empty)
 b = [0, 0, 255]  # blue
 r = [255, 0, 0]  # red
 e = [0, 0, 0]  # empty
-# create images for up and down arrows
-arrow_up = [
-    e, e, e, r, r, e, e, e,
-    e, e, r, r, r, r, e, e,
-    e, r, e, r, r, e, r, e,
-    r, e, e, r, r, e, e, r,
-    e, e, e, r, r, e, e, e,
-    e, e, e, r, r, e, e, e,
-    e, e, e, r, r, e, e, e,
-    e, e, e, r, r, e, e, e
+x = 'PLACEHOLDER'
+
+zero = [
+    x, x, x, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, x, x, x,
 ]
-arrow_down = [
-    e, e, e, b, b, e, e, e,
-    e, e, e, b, b, e, e, e,
-    e, e, e, b, b, e, e, e,
-    e, e, e, b, b, e, e, e,
-    b, e, e, b, b, e, e, b,
-    e, b, e, b, b, e, b, e,
-    e, e, b, b, b, b, e, e,
-    e, e, e, b, b, e, e, e
+
+one = [
+    e, x, x, e,
+    e, x, x, e,
+    e, x, x, e,
+    e, x, x, e,
+    e, x, x, e,
+    e, x, x, e,
+    e, x, x, e,
+    e, x, x, e,
 ]
-bars = [
-    e, e, e, e, e, e, e, e,
-    e, e, e, e, e, e, e, e,
-    r, r, r, r, r, r, r, r,
-    r, r, r, r, r, r, r, r,
-    b, b, b, b, b, b, b, b,
-    b, b, b, b, b, b, b, b,
-    e, e, e, e, e, e, e, e,
-    e, e, e, e, e, e, e, e
+
+two = [
+    x, x, x, x,
+    e, e, e, x,
+    e, e, e, x,
+    x, x, x, x,
+    x, e, e, e,
+    x, e, e, e,
+    x, e, e, e,
+    x, x, x, x,
 ]
+
+three = [
+    x, x, x, x,
+    e, e, e, x,
+    e, e, e, x,
+    x, x, x, x,
+    e, e, e, x,
+    e, e, e, x,
+    e, e, e, x,
+    x, x, x, x,
+]
+
+four = [
+    x, e, e, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, x, x, x,
+    e, e, e, x,
+    e, e, e, x,
+    e, e, e, x,
+    e, e, e, x,
+]
+
+five = [
+    x, x, x, x,
+    x, e, e, e,
+    x, e, e, e,
+    x, x, x, x,
+    e, e, e, x,
+    e, e, e, x,
+    e, e, e, x,
+    x, x, x, x,
+]
+
+six = [
+    x, x, x, x,
+    x, e, e, e,
+    x, e, e, e,
+    x, x, x, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, x, x, x,
+]
+
+seven = [
+    x, x, x, x,
+    e, e, e, x,
+    e, e, e, x,
+    e, e, e, x,
+    e, e, e, x,
+    e, e, e, x,
+    e, e, e, x,
+    e, e, e, x,
+]
+
+eight = [
+    x, x, x, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, x, x, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, x, x, x,
+]
+
+nine = [
+    x, x, x, x,
+    x, e, e, x,
+    x, e, e, x,
+    x, x, x, x,
+    e, e, e, x,
+    e, e, e, x,
+    e, e, e, x,
+    e, e, e, x,
+]
+
+
+def get_display_array(temp):
+    numbers = [zero, one, two, three, four, five, six, seven, eight, nine]
+
+    first = numbers[int((temp % 100) / 10)]
+    second = numbers[int(temp % 10)]
+
+    # make the first number red, second blue (hard to read if they match)
+    first = [b if elem == x else elem for elem in first]
+    second = [r if elem == x else elem for elem in second]
+
+    result = []
+    for i in range(1, 9):
+        for j in range((i-1)*4, i*4):
+            result.append(first[j])
+        for j in range((i-1)*4, i*4):
+            result.append(second[j])
+    return result
 
 
 def c_to_f(input_temp):
@@ -82,7 +174,6 @@ def c_to_f(input_temp):
 
 def get_cpu_temp():
     # 'borrowed' from https://www.raspberrypi.org/forums/viewtopic.php?f=104&t=111457
-    # executes a command at the OS to pull in the CPU temperature
     res = os.popen('vcgencmd measure_temp').readline()
     return float(res.replace("temp=", "").replace("'C\n", ""))
 
@@ -91,18 +182,19 @@ def get_cpu_temp():
 def get_smooth(x):
     # do we have the t object?
     if not hasattr(get_smooth, "t"):
-        # then create it
         get_smooth.t = [x, x, x]
+
     # manage the rolling previous values
     get_smooth.t[2] = get_smooth.t[1]
     get_smooth.t[1] = get_smooth.t[0]
     get_smooth.t[0] = x
+
     # average the three last temperatures
     xs = (get_smooth.t[0] + get_smooth.t[1] + get_smooth.t[2]) / 3
     return xs
 
 
-def get_temp():
+def get_temp(sense):
     # ====================================================================
     # Unfortunately, getting an accurate temperature reading from the
     # Sense HAT is improbable, see here:
@@ -123,17 +215,15 @@ def get_temp():
     t_corr = t - ((t_cpu - t) / 1.5)
     # Finally, average out that value across the last three readings
     t_corr = get_smooth(t_corr)
-    # convoluted, right?
     # Return the calculated temperature
     return t_corr
 
 
 def main():
-    global last_temp
+    sense = initialize()
 
-    # initialize the lastMinute variable to the current time to start
-    last_minute = datetime.datetime.now().minute
     # on startup, just use the previous minute as lastMinute
+    last_minute = datetime.datetime.now().minute
     last_minute -= 1
     if last_minute == 0:
         last_minute = 59
@@ -146,18 +236,19 @@ def main():
         current_second = datetime.datetime.now().second
         # are we at the top of the minute or at a 5 second interval?
         if (current_second == 0) or ((current_second % 5) == 0):
-            # ========================================================
-            # read values from the Sense HAT
-            # ========================================================
             # calculate the temperature
-            calc_temp = get_temp()
+            calc_temp = get_temp(sense)
             # now use it for our purposes
             temp_c = round(calc_temp, 1)
             temp_f = round(c_to_f(calc_temp), 1)
             humidity = round(sense.get_humidity(), 0)
             # convert pressure from millibars to inHg before posting
             pressure = round(sense.get_pressure() * 0.0295300, 1)
-            print("Temp: %sF (%sC), Pressure: %s inHg, Humidity: %s%%" % (temp_f, temp_c, pressure, humidity))
+            print("Temp: %sF (%sC), Pressure: %s inHg, Humidity: %s%%" %
+                  (temp_f, temp_c, pressure, humidity))
+
+            # display temp on LED
+            sense.set_pixels(get_display_array(temp_f))
 
             # get the current minute
             current_minute = datetime.datetime.now().minute
@@ -170,34 +261,18 @@ def main():
                 if (current_minute == 0) or ((current_minute % MEASUREMENT_INTERVAL) == 0):
                     # get the reading timestamp
                     now = datetime.datetime.now()
-                    print("\n%d minute mark (%d @ %s)" % (MEASUREMENT_INTERVAL, current_minute, str(now)))
-                    # did the temperature go up or down?
-                    if last_temp != temp_f:
-                        if last_temp > temp_f:
-                            # display a blue, down arrow
-                            sense.set_pixels(arrow_down)
-                        else:
-                            # display a red, up arrow
-                            sense.set_pixels(arrow_up)
-                    else:
-                        # temperature stayed the same
-                        # display red and blue bars
-                        sense.set_pixels(bars)
-                    # set last_temp to the current temperature before we measure again
-                    last_temp = temp_f
+                    print("\n%d minute mark (%d @ %s)"
+                          % (MEASUREMENT_INTERVAL, current_minute, str(now)))
 
-                    # ========================================================
-                    # Upload the weather data to Weather Underground
-                    # ========================================================
-                    # is weather upload enabled (True)?
+                    # Upload the weather data to Weather Underground if enabled
                     if WEATHER_UPLOAD:
                         # From http://wiki.wunderground.com/index.php/PWS_-_Upload_Protocol
                         print("Uploading data to Weather Underground")
                         # build a weather data object
                         weather_data = {
                             "action": "updateraw",
-                            "ID": wu_station_id,
-                            "PASSWORD": wu_station_key,
+                            "ID": Config.STATION_ID,
+                            "PASSWORD": Config.STATION_KEY,
                             "dateutc": "now",
                             "tempf": str(temp_f),
                             "humidity": str(humidity),
@@ -211,7 +286,7 @@ def main():
                             # do something
                             response.close()  # best practice to close the file
                         except:
-                            print("Exception:", sys.exc_info()[0], SLASH_N)
+                            print("Exception:", sys.exc_info()[0], '\n')
                     else:
                         print("Skipping Weather Underground upload")
 
@@ -219,58 +294,33 @@ def main():
         # You can always increase the sleep value below to check less often
         time.sleep(1)  # this should never happen since the above is an infinite loop
 
-    print("Leaving main()")
 
+def initialize():
+    if (MEASUREMENT_INTERVAL is None) or (MEASUREMENT_INTERVAL > 60):
+        print("The application's 'MEASUREMENT_INTERVAL' cannot be empty or greater than 60")
+        sys.exit(1)
 
-# ============================================================================
-# here's where we start doing stuff
-# ============================================================================
-print(SLASH_N + HASHES)
-print(SINGLE_HASH, "Pi Weather Station                  ", SINGLE_HASH)
-print(SINGLE_HASH, "By John M. Wargo (www.johnwargo.com)", SINGLE_HASH)
-print(HASHES)
+    if Config.STATION_ID is None:
+        print("Missing station ID from the Weather Underground configuration file\n")
+        sys.exit(1)
+    if Config.STATION_KEY is None:
+        print("Missing station key from the Weather Underground configuration file\n")
+        sys.exit(1)
 
-# make sure we don't have a MEASUREMENT_INTERVAL > 60
-if (MEASUREMENT_INTERVAL is None) or (MEASUREMENT_INTERVAL > 60):
-    print("The application's 'MEASUREMENT_INTERVAL' cannot be empty or greater than 60")
-    sys.exit(1)
+    try:
+        print("Initializing the Sense HAT client")
+        sense = SenseHat()
+        # write some text to the Sense HAT's 'screen'
+        sense.show_message("Init", text_colour=[255, 255, 0], back_colour=[0, 0, 255])
+        # clear the screen
+        sense.clear()
+    except:
+        print("Unable to initialize the Sense HAT library:", sys.exc_info()[0])
+        sys.exit(1)
 
-# ============================================================================
-#  Read Weather Underground Configuration Parameters
-# ============================================================================
-print("\nInitializing Weather Underground configuration")
-wu_station_id = Config.STATION_ID
-wu_station_key = Config.STATION_KEY
-if (wu_station_id is None) or (wu_station_key is None):
-    print("Missing values from the Weather Underground configuration file\n")
-    sys.exit(1)
+    print("Initialization complete!")
+    return sense
 
-# we made it this far, so it must have worked...
-print("Successfully read Weather Underground configuration values")
-print("Station ID:", wu_station_id)
-# print("Station key:", wu_station_key)
-
-# ============================================================================
-# initialize the Sense HAT object
-# ============================================================================
-try:
-    print("Initializing the Sense HAT client")
-    sense = SenseHat()
-    # sense.set_rotation(180)
-    # then write some text to the Sense HAT's 'screen'
-    sense.show_message("Init", text_colour=[255, 255, 0], back_colour=[0, 0, 255])
-    # clear the screen
-    sense.clear()
-    # get the current temp to use when checking the previous measurement
-    last_temp = round(c_to_f(get_temp()), 1)
-    print("Current temperature reading:", last_temp)
-except:
-    print("Unable to initialize the Sense HAT library:", sys.exc_info()[0])
-    sys.exit(1)
-
-print("Initialization complete!")
-
-# Now see what we're supposed to do next
 if __name__ == "__main__":
     try:
         main()
